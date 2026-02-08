@@ -1,0 +1,33 @@
+{
+  "videojuegos": [
+    {
+      "id": 1,
+      "titulo": "The Legend of Zelda: Breath of the Wild",
+      "genero": "Aventura, Acción-RPG",
+      "estudio": "Nintendo",
+      "año": 2017
+    },
+    {
+      "id": 2,
+      "titulo": "Red Dead Redemption 2",
+      "genero": "Acción-Aventura",
+      "estudio": "Rockstar Games",
+      "año": 2018
+    },
+    {
+      "id": 3,
+      "titulo": "Cyberpunk 2077",
+      "genero": "RPG, Acción",
+      "estudio": "CD Projekt Red",
+      "año": 2020
+    },
+    {
+      "id": 5,
+      "titulo": "Hollow Knith",
+      "genero": "Metroidvania",
+      "estudio": "Team Cherry",
+      "año": 2016,
+      "creado": "2026-01-28T06:44:17.505Z"
+    }
+  ]
+}

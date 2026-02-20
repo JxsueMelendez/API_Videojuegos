@@ -1,10 +1,13 @@
 const fs = require("fs")
 const path = require("path")
 const { pool } = require("../db")
+const { error } = require("console")
 
 const InsertInto = async (arg) => {
-    await pool.execute('INSERT INTO videojuegos VALUES (?, ?, ?, ?, ?, ?)', 
-        [arg.id, arg.titulo, arg.genero, arg.estudio, arg.anio, arg.creado])
+    const [result] = await pool.execute('INSERT INTO videojuegos (titulo, genero, estudio, anio) VALUES (?, ?, ?, ?)',
+        [arg.titulo, arg.genero, arg.estudio, arg.anio])
+
+    return result
 }
 
 const SelectAll = async () => {
@@ -14,21 +17,20 @@ const SelectAll = async () => {
 
 class GameService {
     async create(gameDTO) {
-        const data = SelectAll()
+        const [existencia] = await pool.execute('SELECT 1 FROM videojuegos WHERE titulo = ?', [gameDTO.titulo])
 
-        const existencia = data.find((DBgame) => DBgame.id === gameDTO.id)
-        if (existencia) {
+        if (existencia.length > 0) {
             throw new Error("El juego ya existe dentro de la base de datos")
         }
 
         const newGame = {
-            id: data.length + 1,
-            ...gameDTO,
-            creado: new Date()
+            ...gameDTO
         };
 
-        InsertInto(newGame)
-        return newGame;
+        const result = await InsertInto(newGame)
+        const [objt] = await pool.execute('SELECT * FROM videojuegos WHERE id = ?', [result.insertId])
+
+        return objt
     }
 
     async getById(id) {
@@ -42,30 +44,44 @@ class GameService {
     }
 
     async put(id, body) {
-        const data = await SelectAll()
-        const gameIndexed = data.findIndex((game) => game.id === id)
+        const [game] = await pool.execute('SELECT 1 FROM videojuegos WHERE id = ?', [id])
 
-        if(gameIndex === -1){
-            throw new Error("Juego no encontrado, verificar id")
+        if (!game || game.length === 0) {
+            throw new Error("Juego no existe")
         }
-        return gameIndex
+
+        const object = Object.entries(body).filter(([_, value]) => value !== undefined && value !== '')
+
+        const allowedFields = ['titulo', 'genero', 'estudio', 'anio']
+        const corrected = object.filter(([key, _]) => allowedFields.includes(key))
+
+        if (corrected.length === 0) {
+            throw new Error("No hay campos válidos para actualizar")
+        }
+
+        const setClause = corrected.map(([key]) => `${key} = ?`).join(', ')
+        const values = corrected.map(([, value]) => value)
+
+        await pool.execute(`UPDATE videojuegos SET ${setClause} WHERE id = ?`, [...values, id])
+
+        const [gameUpdated] = await pool.execute('SELECT * FROM videojuegos WHERE id = ? LIMIT 1', [id])
+
+        return gameUpdated
     }
 
     async delete(id) {
-        const db = getFile();
-        const gameIndex = db.videojuegos.findIndex((game) => game.id === id)
+        const [gameIndexed] = await pool.execute('SELECT * FROM videojuegos WHERE id = ?', [id])
 
-        if (gameIndex === -1) {
+        if (!gameIndexed || gameIndexed.length === 0) {
             throw new Error("El juego no se encuentra, por favor revisar id")
         }
 
-        db.videojuegos.splice(gameIndex, 1)
-        postFile(db)
-        return { message: "Juego eliminado correctamente" }
+        const [result] = await pool.execute('DELETE FROM videojuegos WHERE id = ?', [id])
+        return { message: "Juego eliminado correctamente", data: result.info }
     }
 
     async getAll() {
-        const data = SelectAll()
+        const data = await SelectAll()
         return data
     }
 }

@@ -51,10 +51,10 @@ class GameController {
         }
     }
 
-    deleteGame(req, res) {
+    async deleteGame(req, res) {
         try {
             const id = parseInt(req.params.id)
-            const deletedGame = GameService.delete(id)
+            const deletedGame = await GameService.delete(id)
 
             res.status(200).json({
                 message: deletedGame
